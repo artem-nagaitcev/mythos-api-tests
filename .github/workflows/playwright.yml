@@ -28,6 +28,8 @@ jobs:
       run: npm run test:smoke
     - name: Run public read tests
       run: npm run test:read
+    - name: Run GraphQL tests
+      run: npm run test:graphql
     - name: Run auth tests
       if: env.HAS_AUTH_SECRETS == 'true'
       run: npm run test:auth
