@@ -1,10 +1,27 @@
 import dotenv from 'dotenv';
+import os from 'node:os';
 import { defineConfig } from '@playwright/test';
 
 dotenv.config({ override: true, quiet: true });
 
 const isCI = !!process.env.CI;
 const includeIgnoredTests = process.env.PW_INCLUDE_IGNORE === '1';
+const htmlReporter = ['html', { open: 'never' }] as const;
+const allureReporter = [
+  'allure-playwright',
+  {
+    resultsDir: 'allure-results',
+    detail: true,
+    suiteTitle: true,
+    environmentInfo: {
+      os_platform: os.platform(),
+      os_release: os.release(),
+      os_version: os.version(),
+      node_version: process.version,
+      base_url: process.env.BASE_URL ?? 'not configured',
+    },
+  },
+] as const;
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -22,8 +39,8 @@ export default defineConfig({
   workers: isCI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: isCI
-    ? [['github'], ['html', { open: 'never' }]]
-    : [['list', { printSteps: true }], ['html', { open: 'never' }]],
+    ? [['github'], htmlReporter, allureReporter]
+    : [['list', { printSteps: true }], htmlReporter, allureReporter],
   /* Store traces and other test artifacts in a stable folder for local runs and CI uploads. */
   outputDir: 'test-results',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */

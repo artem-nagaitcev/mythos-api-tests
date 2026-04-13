@@ -619,6 +619,89 @@ or:
 npm run docker:report
 ```
 
+## Step 13B. Add Allure Reports
+
+The project also includes Allure reporting for API tests in addition to the default Playwright HTML report.
+
+Why both reports are useful:
+
+1. Playwright HTML is great for fast local debugging and trace navigation
+2. Allure gives a cleaner history-oriented test report with steps, hooks, retries, attachments, and environment details
+3. The same Playwright run can now produce both report formats without changing the test commands
+
+How it works:
+
+1. `allure-playwright` is configured as an additional Playwright reporter
+2. Raw Allure result files are written to `allure-results/`
+3. The HTML Allure site is generated into `allure-report/`
+4. Playwright `test.step(...)` calls and hooks are included in the Allure output
+
+Install note:
+
+1. The repository includes `allure-commandline` in `devDependencies`
+2. Generating or serving an Allure HTML report still requires Java on the machine where the command runs
+3. The Docker image includes Java already, so Docker-based Allure generation works without extra local setup
+
+Run tests and collect fresh Allure results:
+
+```bash
+npm run test:allure
+```
+
+Generate the Allure HTML report:
+
+```bash
+npm run allure:generate
+```
+
+Open an existing Allure report:
+
+```bash
+npm run allure:open
+```
+
+Serve the report directly from the raw results:
+
+```bash
+npm run allure:serve
+```
+
+If you want to remove old Allure artifacts before a new run:
+
+```bash
+npm run allure:clean
+```
+
+Recommended local flow from the project root:
+
+```bash
+npm run allure:clean
+npm run test:allure
+npm run allure:generate
+npm run allure:open
+```
+
+If you are using PowerShell on Windows and `npm` is blocked by execution policy, use:
+
+```powershell
+npm.cmd run allure:clean
+npm.cmd run test:allure
+npm.cmd run allure:generate
+npm.cmd run allure:open
+```
+
+Docker usage:
+
+1. `docker compose run --rm tests npm run test:allure` runs the tests and writes raw Allure files into the mounted `allure-results/` folder
+2. `docker compose run --rm tests npm run allure:generate` converts those files into the mounted `allure-report/` folder
+3. The generated report can then be opened locally from `allure-report/index.html`
+
+Or use the npm wrapper for Docker-based report generation:
+
+```bash
+npm run docker:allure:generate
+```
+
 ## Step 14. Recommended Project Structure
 
 A simple structure that works well for an API-focused Playwright project:
@@ -636,6 +719,8 @@ mythos-api-tests/
   Dockerfile
   compose.yaml
   .dockerignore
+  allure-results/
+  allure-report/
   playwright.config.ts
   tsconfig.json
   package.json
@@ -656,11 +741,13 @@ What each part is for:
 8. `Dockerfile` contains the cross-platform Playwright runtime for containerized runs
 9. `compose.yaml` contains ready-to-run Docker services for tests and report viewing
 10. `.dockerignore` keeps the Docker build context clean and avoids copying local artifacts into the image
-11. `tsconfig.json` contains TypeScript compiler settings
-12. `package.json` contains dependencies and runnable scripts
-13. `.env.example` documents required environment variables
-14. `playwright-report/` is generated after test runs for HTML reporting
-15. `test-results/` is generated after test runs for traces and attachments
+11. `allure-results/` stores raw Allure execution data
+12. `allure-report/` stores the generated Allure HTML site
+13. `tsconfig.json` contains TypeScript compiler settings
+14. `package.json` contains dependencies and runnable scripts
+15. `.env.example` documents required environment variables
+16. `playwright-report/` is generated after test runs for HTML reporting
+17. `test-results/` is generated after test runs for traces and attachments
 
 ## Step 15. API Smoke Test Starter
 
@@ -819,6 +906,7 @@ This setup gives you:
 4. GitHub Actions support from the start
 5. Tagged suites for focused local and CI runs
 6. Clear HTML report and trace artifact handling
-7. Shared fixtures for auth and temporary test data cleanup
-8. Contract-level assertions for success and error responses
-9. Easy test execution from both VS Code, the terminal, and Docker
+7. Allure reports with environment details, steps, and attachments
+8. Shared fixtures for auth and temporary test data cleanup
+9. Contract-level assertions for success and error responses
+10. Easy test execution from both VS Code, the terminal, and Docker

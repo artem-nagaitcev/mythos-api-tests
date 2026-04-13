@@ -10,6 +10,8 @@ services:
     env_file:
       - .env
     volumes:
+      - ./allure-report:/app/allure-report
+      - ./allure-results:/app/allure-results
       - ./playwright-report:/app/playwright-report
       - ./test-results:/app/test-results
     command: npm test

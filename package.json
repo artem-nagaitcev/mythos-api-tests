@@ -3,8 +3,14 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "allure:clean": "node -e \"const fs=require('node:fs'); ['allure-results','allure-report'].forEach((dir)=>fs.rmSync(dir,{ recursive: true, force: true }));\"",
+    "allure:generate": "allure generate ./allure-results --clean -o ./allure-report",
+    "allure:open": "allure open ./allure-report",
+    "allure:serve": "allure serve ./allure-results",
+    "docker:allure:generate": "docker compose run --rm tests npm run allure:generate",
     "test": "playwright test",
     "test:auth": "playwright test --grep @auth",
+    "test:allure": "npm run allure:clean && playwright test",
     "test:crud": "playwright test --grep @crud",
     "test:debug-demo": "node ./scripts/run-ignored-tests.mjs",
     "docker:build": "docker compose build tests",
@@ -27,6 +33,8 @@
   "devDependencies": {
     "@playwright/test": "^1.59.1",
     "@types/node": "^25.5.2",
+    "allure-commandline": "^2.38.1",
+    "allure-playwright": "^3.7.1",
     "typescript": "^6.0.2"
   },
   "dependencies": {
