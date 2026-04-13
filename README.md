@@ -206,6 +206,7 @@ Example:
 
 ```bash
 BASE_URL=https://api.qasandbox.ru/api/
+GRAPHQL_URL=https://api.qasandbox.ru/graphql
 USERNAME=your_existing_test_username
 PASSWORD=your_existing_test_password
 ```
@@ -214,6 +215,7 @@ Recommended example file for the team:
 
 ```bash
 BASE_URL=
+GRAPHQL_URL=
 USERNAME=
 PASSWORD=
 ```
@@ -632,10 +634,11 @@ Why both reports are useful:
 How it works:
 
 1. `allure-playwright` is configured as an additional Playwright reporter
-2. Raw Allure result files are written to `allure-results/`
-3. The HTML Allure site is generated into `allure-report/`
-4. Playwright `test.step(...)` calls and hooks are included in the Allure output
-5. Shared API helper calls made through `debugApiCall(...)` create Allure steps with attached request and response payloads
+2. `allure-js-commons` is used directly in the test code to create manual Allure steps and attach request or response payloads
+3. Raw Allure result files are written to `allure-results/`
+4. The HTML Allure site is generated into `allure-report/`
+5. Playwright `test.step(...)` calls and hooks are included in the Allure output
+6. Shared API helper calls made through `debugApiCall(...)` create Allure steps with attached request and response payloads
 
 Install note:
 
@@ -646,7 +649,7 @@ Install note:
 If you are adding Allure support manually in a fresh copy of the project, install the packages with:
 
 ```bash
-npm install -D allure-playwright allure-commandline
+npm install -D allure-playwright allure-commandline allure-js-commons
 ```
 
 Run tests and collect fresh Allure results:
@@ -750,6 +753,12 @@ npm.cmd run test:mock
 
 The project also includes GraphQL examples for the Mythos sandbox at `https://api.qasandbox.ru/graphql`.
 
+Setup note:
+
+1. If you cloned the current repository, a regular `npm install` or `npm ci` is enough because the GraphQL and Allure packages are already listed in `package.json`
+2. No separate GraphQL-specific npm install command is required on top of the normal project dependency install
+3. `GRAPHQL_URL` is optional in `.env`; if it is missing, the tests use the default public sandbox endpoint
+
 What the GraphQL suite covers:
 
 1. Public `allSouls` and `getSoul` queries
@@ -760,8 +769,8 @@ Implementation notes:
 
 1. Reusable GraphQL request helpers live in `src/api/graphql.ts`
 2. The test suite lives in `tests/api/graphql.spec.ts`
-3. `GRAPHQL_URL` is optional in `.env`; if it is missing, the tests use `https://api.qasandbox.ru/graphql`
-4. The same `debugApiCall(...)` fixture is reused, so GraphQL requests and responses are attached to Allure the same way as the REST tests
+3. The same `debugApiCall(...)` fixture is reused, so GraphQL requests and responses are attached to Allure the same way as the REST tests
+4. The suite dynamically registers a new `scribe` user on each run, so it does not depend on `USERNAME` and `PASSWORD` from the REST `.env` setup
 
 Run only the GraphQL examples:
 
@@ -773,6 +782,22 @@ If you are using PowerShell on Windows and `npm` is blocked by execution policy,
 
 ```powershell
 npm.cmd run test:graphql
+```
+
+Recommended local GraphQL flow:
+
+```bash
+npm install
+npm run test:graphql
+```
+
+If you want Allure for only the GraphQL suite:
+
+```bash
+npm run allure:clean
+npm run test:graphql
+npm run allure:generate
+npm run allure:open
 ```
 
 ## Step 14. Recommended Project Structure
@@ -805,10 +830,10 @@ mythos-api-tests/
 What each part is for:
 
 1. `scripts/` contains small utility launchers for special test flows
-2. `tests/api/` contains API smoke, regression, and scenario tests
-3. `tests/fixtures/` contains shared Playwright fixtures for auth and resource lifecycle
+2. `tests/api/` contains REST, GraphQL, and mock-based API scenarios such as `auth.spec.ts`, `graphql.spec.ts`, and `auth-mocks.spec.ts`
+3. `tests/fixtures/` contains shared Playwright fixtures for auth, request logging, and resource lifecycle
 4. `tests/support/` contains shared test data, contract assertions, and helper inputs
-5. `src/api/` contains reusable API request helpers
+5. `src/api/` contains reusable API request helpers for both REST and GraphQL flows
 6. `src/config/` contains environment-variable helpers and shared configuration code
 7. `playwright.config.ts` contains the global Playwright configuration
 8. `Dockerfile` contains the cross-platform Playwright runtime for containerized runs
@@ -821,6 +846,12 @@ What each part is for:
 15. `.env.example` documents required environment variables
 16. `playwright-report/` is generated after test runs for HTML reporting
 17. `test-results/` is generated after test runs for traces and attachments
+
+How the test layers are split:
+
+1. REST live API tests cover the main `/api` endpoints and reuse `.env` credentials where auth is required
+2. GraphQL tests cover public queries plus authenticated mutations by dynamically registering a new test user
+3. Mock tests demonstrate Playwright network interception with `page.route(...)` and do not validate the real backend contract
 
 ## Step 15. API Smoke Test Starter
 
@@ -968,6 +999,46 @@ Add coverage for:
 1. Combined query parameters such as `category + sort`
 2. More explicit sort validation instead of only checking that order changes
 3. Additional checks that filtered responses still follow the expected contract
+
+### Homework Part 5. Add One More Mock Example
+
+The project already contains one route-based mock example for an expired token. Add one more mock test that demonstrates a different Playwright technique.
+
+Recommended task:
+
+1. Create a new file such as `tests/api/mythology-mocks.spec.ts`
+2. Intercept `GET /mythology` with `page.route(...)`
+3. Use `route.fetch()` to get the real backend response first
+4. Patch the JSON by adding one synthetic entity like `Mocked Hero`
+5. Fulfill the request with the modified body and assert that the injected entity is present in the browser-side `fetch(...)` result
+
+Why this is good homework:
+
+1. It teaches the difference between a full stub and a partial response override
+2. It stays close to the official Playwright API mocking documentation
+3. It shows how to keep most of the real backend data while still making the test deterministic
+
+Expected goal:
+
+1. The new mock test should attach `request` and `response` details to Allure just like the existing expired-token mock
+
+### Homework Part 6. Add One More GraphQL Test
+
+The GraphQL suite already covers public queries and one authenticated happy-path lifecycle. Add one negative GraphQL test to strengthen contract coverage.
+
+Recommended task:
+
+1. Add a test to `tests/api/graphql.spec.ts`
+2. Call `createSoul` without sending the JWT token
+3. Assert that the response still returns HTTP `200`, but the GraphQL body contains an `errors` array
+4. Verify that `data.createSoul` is missing or `null`
+5. Assert that the first error message indicates missing or invalid authorization
+
+Why this is good homework:
+
+1. It teaches the difference between HTTP-level success and GraphQL-level failure
+2. It adds negative coverage for a protected mutation without needing extra backend setup
+3. It complements the existing happy-path GraphQL lifecycle test without duplicating it
 
 ## Project Summary
 
