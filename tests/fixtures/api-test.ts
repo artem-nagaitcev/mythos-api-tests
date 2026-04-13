@@ -1,4 +1,5 @@
 import { writeFile } from 'node:fs/promises';
+import * as allure from 'allure-js-commons';
 import {
   expect,
   request as playwrightRequest,
@@ -121,6 +122,9 @@ const serializeError = (error: unknown): { message: string; stack?: string } => 
   };
 };
 
+const stringifyAttachment = (value: unknown): string =>
+  typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+
 const readResponseBody = async (response: APIResponse): Promise<unknown> => {
   const text = await response.text();
 
@@ -140,6 +144,12 @@ const readResponseBody = async (response: APIResponse): Promise<unknown> => {
 
   return text;
 };
+
+const buildRequestSnapshot = (request: ApiRequestDebug): ApiRequestDebug => ({
+  ...request,
+  body: redactSensitive(request.body),
+  headers: redactHeaders(request.headers),
+});
 
 export const test = base.extend<ApiFixtures, ApiWorkerFixtures>({
   authSession: [
@@ -167,44 +177,55 @@ export const test = base.extend<ApiFixtures, ApiWorkerFixtures>({
 
     const debugApiCall: ApiDebugCall = async (metadata, action) => {
       const startedAt = new Date().toISOString();
+      const requestSnapshot = buildRequestSnapshot(metadata.request);
 
-      try {
-        const response = await action();
+      return allure.step(`API: ${metadata.label}`, async (stepContext) => {
+        await stepContext.parameter('method', metadata.request.method);
+        await stepContext.parameter('url', metadata.request.url);
+        await allure.attachment('request', stringifyAttachment(requestSnapshot), 'application/json');
 
-        apiExchanges.push({
-          label: metadata.label,
-          request: {
-            ...metadata.request,
-            body: redactSensitive(metadata.request.body),
-            headers: redactHeaders(metadata.request.headers),
-          },
-          response: {
+        try {
+          const response = await action();
+          const responseSnapshot = {
             body: await readResponseBody(response),
             headers: redactHeaders(response.headers()) ?? {},
             ok: response.ok(),
             status: response.status(),
             url: response.url(),
-          },
-          finishedAt: new Date().toISOString(),
-          startedAt,
-        });
+          };
 
-        return response;
-      } catch (error) {
-        apiExchanges.push({
-          label: metadata.label,
-          request: {
-            ...metadata.request,
-            body: redactSensitive(metadata.request.body),
-            headers: redactHeaders(metadata.request.headers),
-          },
-          error: serializeError(error),
-          finishedAt: new Date().toISOString(),
-          startedAt,
-        });
+          apiExchanges.push({
+            label: metadata.label,
+            request: requestSnapshot,
+            response: responseSnapshot,
+            finishedAt: new Date().toISOString(),
+            startedAt,
+          });
 
-        throw error;
-      }
+          await stepContext.parameter('status', String(responseSnapshot.status));
+          await allure.attachment(
+            'response',
+            stringifyAttachment(responseSnapshot),
+            'application/json',
+          );
+
+          return response;
+        } catch (error) {
+          const errorSnapshot = serializeError(error);
+
+          apiExchanges.push({
+            label: metadata.label,
+            request: requestSnapshot,
+            error: errorSnapshot,
+            finishedAt: new Date().toISOString(),
+            startedAt,
+          });
+
+          await allure.attachment('error', stringifyAttachment(errorSnapshot), 'application/json');
+
+          throw error;
+        }
+      });
     };
 
     await use(debugApiCall);

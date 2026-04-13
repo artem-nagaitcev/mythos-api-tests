@@ -635,6 +635,7 @@ How it works:
 2. Raw Allure result files are written to `allure-results/`
 3. The HTML Allure site is generated into `allure-report/`
 4. Playwright `test.step(...)` calls and hooks are included in the Allure output
+5. Shared API helper calls made through `debugApiCall(...)` create Allure steps with attached request and response payloads
 
 Install note:
 
