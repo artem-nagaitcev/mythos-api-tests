@@ -13,6 +13,7 @@
     "test:allure": "npm run allure:clean && playwright test",
     "test:crud": "playwright test --grep @crud",
     "test:debug-demo": "node ./scripts/run-ignored-tests.mjs",
+    "test:mock": "playwright test --grep @mock",
     "docker:build": "docker compose build tests",
     "docker:report": "docker compose run --rm --service-ports report",
     "docker:test": "docker compose run --rm tests",

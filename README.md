@@ -709,6 +709,36 @@ Or use the npm wrapper for Docker-based report generation:
 npm run docker:allure:generate
 ```
 
+## Step 13C. Add Playwright API Mock Examples
+
+Playwright can also be used to mock API traffic for teaching examples and isolated tests.
+
+Important difference:
+
+1. `APIRequestContext` is great for real API tests against the live service
+2. `page.route(...)` is the main Playwright tool for network mocking
+3. Playwright route-based mocking works for requests made by the page, including browser `fetch(...)` and XHR calls
+4. `APIRequestContext` itself does not provide the same `route(...)` interception API
+5. Because of that, the mock example in this project runs `fetch(...)` from a browser page and intercepts the requests with Playwright routes
+
+The repository includes one focused mock example:
+
+1. `tests/api/auth-mocks.spec.ts`
+2. The mocked `/login` call returns a valid-looking but expired JWT
+3. The next protected `POST /mythology` call is intercepted and forced to return `401 Token expired`
+
+Run only the mock examples:
+
+```bash
+npm run test:mock
+```
+
+If you are using PowerShell on Windows and `npm` is blocked by execution policy, use:
+
+```powershell
+npm.cmd run test:mock
+```
+
 ## Step 14. Recommended Project Structure
 
 A simple structure that works well for an API-focused Playwright project:
