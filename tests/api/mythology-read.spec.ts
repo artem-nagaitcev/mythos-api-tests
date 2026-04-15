@@ -15,6 +15,8 @@ import {
   expectMythologyEntityListContract,
 } from "../support/contract-assertions";
 
+const not_found = "Персонаж не найден";
+
 test(
   "GET /mythology returns successful JSON response",
   { tag: ["@read", "@smoke"] },
@@ -190,7 +192,7 @@ test(
 
 test(
   "GET /mythology/{id} returns 404 for a non-existent entity",
-  { tag: "@read" },
+  { tag: ["@read", "@debug"] },
   async ({ request, debugApiCall }) => {
     const response =
       await test.step("Fetch a non-existent mythology entity by id", async () =>
@@ -207,6 +209,8 @@ test(
 
     expect(response.status()).toBe(404);
     expectJsonContentType(response);
+    const data = await response.json();
+    expect(data.error).toBe(not_found);
 
     const body =
       await test.step("Read non-existent mythology entity response", async () =>

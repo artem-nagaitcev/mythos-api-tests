@@ -20,6 +20,8 @@ import {
 
 test.describe.configure({ mode: "serial" });
 
+const not_found = "Персонаж не найден";
+
 test(
   "POST /mythology creates a new entity",
   { tag: "@crud" },
@@ -212,6 +214,8 @@ test(
         ));
 
     expect(getResponse.status()).toBe(404);
+    const data = await getResponse.json();
+    expect(data.error).toBe(not_found);
   },
 );
 
@@ -266,6 +270,8 @@ test(
           () => replaceMythologyEntity(request, authToken, id, payload),
         ));
     expect(getResponse.status()).toBe(404);
+    const data = await getResponse.json();
+    expect(data.error).toBe(not_found);
   },
 );
 
@@ -293,6 +299,8 @@ test(
           () => patchMythologyEntity(request, authToken, id, payload),
         ));
     expect(getResponse.status()).toBe(404);
+    const data = await getResponse.json();
+    expect(data.error).toBe(not_found);
   },
 );
 
@@ -318,5 +326,7 @@ test(
           () => deleteMythologyEntity(request, authToken, id),
         ));
     expect(getResponse.status()).toBe(404);
+    const data = await getResponse.json();
+    expect(data.error).toBe(not_found);
   },
 );

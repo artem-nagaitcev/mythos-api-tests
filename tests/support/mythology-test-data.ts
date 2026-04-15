@@ -76,4 +76,11 @@ export const invalidCreateMythologyCases: InvalidCreateMythologyCase[] = [
       name: "",
     }),
   },
+  {
+    name: "invalid category",
+    payload: createMythologyPayload({
+      name: "",
+      category: "tuna",
+    }),
+  },
 ];
