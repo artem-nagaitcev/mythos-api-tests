@@ -46,6 +46,93 @@ test(
 
 for (const category of mythologyCategories) {
   test(
+    `GET /mythology?category=${category} returns only ${category} in correct order`,
+    { tag: ["@read", "@debug"] },
+    async ({ request, debugApiCall }) => {
+      const ascResponse =
+        await test.step(`Fetch mythology list filtered by ${category}`, async () =>
+          debugApiCall(
+            {
+              label: `Fetch mythology list filtered by ${category}`,
+              request: {
+                method: "GET",
+                url: `mythology?category=${category}&sort=asc`,
+              },
+            },
+            () =>
+              getMythologyList(request, { category: category, sort: "asc" }),
+          ));
+
+      const descResponse =
+        await test.step(`Fetch mythology list filtered by ${category}`, async () =>
+          debugApiCall(
+            {
+              label: `Fetch mythology list filtered by ${category}`,
+              request: {
+                method: "GET",
+                url: `mythology?category=${category}&sort=desc`,
+              },
+            },
+            () =>
+              getMythologyList(request, { category: category, sort: "asc" }),
+          ));
+
+      await expect(ascResponse).toBeOK();
+      expectJsonContentType(ascResponse);
+
+      const ascBody =
+        await test.step("Read filtered mythology list response", async () =>
+          (await ascResponse.json()) as MythologyEntity[]);
+
+      expectMythologyEntityListContract(ascBody);
+
+      for (const entity of ascBody) {
+        expect(entity.category).toBe(category);
+      }
+
+      await expect(descResponse).toBeOK();
+      expectJsonContentType(descResponse);
+
+      const descBody =
+        await test.step("Read filtered mythology list response", async () =>
+          (await descResponse.json()) as MythologyEntity[]);
+
+      expectMythologyEntityListContract(descBody);
+
+      for (const entity of descBody) {
+        expect(entity.category).toBe(category);
+      }
+
+      const ascEntities =
+        await test.step("Read ascending mythology list response", async () =>
+          (await ascResponse.json()) as MythologyEntity[]);
+      const descEntities =
+        await test.step("Read descending mythology list response", async () =>
+          (await descResponse.json()) as MythologyEntity[]);
+
+      expectMythologyEntityListContract(ascEntities);
+      expectMythologyEntityListContract(descEntities);
+
+      const descIds = new Set(descEntities.map((entity) => entity.id));
+      const ascIds = new Set(ascEntities.map((entity) => entity.id));
+
+      const commonAscIds = ascEntities
+        .filter((entity) => descIds.has(entity.id))
+        .map((entity) => entity.id);
+      const commonDescIds = descEntities
+        .filter((entity) => ascIds.has(entity.id))
+        .map((entity) => entity.id);
+
+      expect(commonAscIds.length).toBeGreaterThan(20);
+      expect(commonDescIds.length).toBe(commonAscIds.length);
+      expect(commonAscIds).not.toEqual(commonDescIds);
+      expect(commonAscIds.slice(0, 20)).not.toEqual(commonDescIds.slice(0, 20));
+    },
+  );
+}
+
+for (const category of mythologyCategories) {
+  test(
     `GET /mythology?category=${category} returns only ${category}`,
     { tag: "@read" },
     async ({ request, debugApiCall }) => {

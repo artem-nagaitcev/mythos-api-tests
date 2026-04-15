@@ -7,4 +7,3 @@
 //   createMythologyEntityById,
 //   type MythologyEntity,
 // } from "../../src/api/mythology";
-
