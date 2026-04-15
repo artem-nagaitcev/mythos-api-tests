@@ -258,7 +258,7 @@ test(
       await test.step("Verify entity is no longer available", async () =>
         debugApiCall(
           {
-            label: `Send POST request entity ${id}`,
+            label: `Send PUT request entity ${id}`,
             request: {
               method: "PUT",
               url: `mythology/${id}`,
@@ -287,7 +287,7 @@ test(
       await test.step("Verify entity is no longer available", async () =>
         debugApiCall(
           {
-            label: `Send POST request entity ${id}`,
+            label: `Send PATCH request entity ${id}`,
             request: {
               method: "PATCH",
               url: `mythology/${id}`,
@@ -314,7 +314,7 @@ test(
       await test.step("Verify entity is no longer available", async () =>
         debugApiCall(
           {
-            label: `Send POST request entity ${id}`,
+            label: `Send DELETE request entity ${id}`,
             request: {
               method: "DELETE",
               url: `mythology/${id}`,
