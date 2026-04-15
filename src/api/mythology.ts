@@ -59,6 +59,17 @@ export const createMythologyEntity = (
     headers: createAuthHeaders(token),
   });
 
+export const createMythologyEntityById = (
+  request: APIRequestContext,
+  token: string,
+  payload: CreateMythologyPayload,
+  id: number,
+): Promise<APIResponse> =>
+  request.post(`mythology/${id}`, {
+    data: payload,
+    headers: createAuthHeaders(token),
+  });
+
 export const replaceMythologyEntity = (
   request: APIRequestContext,
   token: string,

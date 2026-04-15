@@ -4,6 +4,7 @@ import {
   getMythologyById,
   patchMythologyEntity,
   replaceMythologyEntity,
+  createMythologyEntityById,
   type MythologyEntity,
 } from "../../src/api/mythology";
 import { expect, test } from "../fixtures/api-test";
@@ -210,6 +211,112 @@ test(
           () => getMythologyById(request, createdEntity.id),
         ));
 
+    expect(getResponse.status()).toBe(404);
+  },
+);
+
+test(
+  "POST /mythology/{id} returns 405 Method Not Allowed",
+  { tag: ["@crud", "@debug"] },
+  async ({ request, authToken, debugApiCall }) => {
+    const payload = createMythologyPayload();
+
+    const id = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
+
+    const getResponse =
+      await test.step("Verify entity is no longer available", async () =>
+        debugApiCall(
+          {
+            label: `Send POST request entity ${id}`,
+            request: {
+              method: "POST",
+              url: `mythology/${id}`,
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+              },
+            },
+          },
+          () => createMythologyEntityById(request, authToken, payload, id),
+        ));
+    expect(getResponse.status()).toBe(405);
+  },
+);
+
+test(
+  "PUT /mythology/{id} returns the expected status for a non-existent entity",
+  { tag: ["@crud", "@debug"] },
+  async ({ request, authToken, debugApiCall }) => {
+    const payload = createMythologyPayload();
+
+    const id = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
+
+    const getResponse =
+      await test.step("Verify entity is no longer available", async () =>
+        debugApiCall(
+          {
+            label: `Send POST request entity ${id}`,
+            request: {
+              method: "PUT",
+              url: `mythology/${id}`,
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+              },
+            },
+          },
+          () => replaceMythologyEntity(request, authToken, id, payload),
+        ));
+    expect(getResponse.status()).toBe(404);
+  },
+);
+
+test(
+  "PATCH /mythology/{id} returns the expected status for a non-existent entity",
+  { tag: ["@crud", "@debug"] },
+  async ({ request, authToken, debugApiCall }) => {
+    const payload = createMythologyPayload();
+
+    const id = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
+
+    const getResponse =
+      await test.step("Verify entity is no longer available", async () =>
+        debugApiCall(
+          {
+            label: `Send POST request entity ${id}`,
+            request: {
+              method: "PATCH",
+              url: `mythology/${id}`,
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+              },
+            },
+          },
+          () => patchMythologyEntity(request, authToken, id, payload),
+        ));
+    expect(getResponse.status()).toBe(404);
+  },
+);
+
+test(
+  "DELETE /mythology/{id} returns the expected status for a non-existent entity",
+  { tag: ["@crud", "@debug"] },
+  async ({ request, authToken, debugApiCall }) => {
+    const id = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
+
+    const getResponse =
+      await test.step("Verify entity is no longer available", async () =>
+        debugApiCall(
+          {
+            label: `Send POST request entity ${id}`,
+            request: {
+              method: "DELETE",
+              url: `mythology/${id}`,
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+              },
+            },
+          },
+          () => deleteMythologyEntity(request, authToken, id),
+        ));
     expect(getResponse.status()).toBe(404);
   },
 );
