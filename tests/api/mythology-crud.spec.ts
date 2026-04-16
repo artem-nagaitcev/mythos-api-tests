@@ -22,6 +22,10 @@ test.describe.configure({ mode: "serial" });
 
 const not_found = "Персонаж не найден";
 
+const randomInt = (min: number, max: number): number => {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+};
+
 test(
   "POST /mythology creates a new entity",
   { tag: "@crud" },
@@ -225,7 +229,7 @@ test(
   async ({ request, authToken, debugApiCall }) => {
     const payload = createMythologyPayload();
 
-    const id = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
+    const id = randomInt(100000, 999999);
 
     const getResponse =
       await test.step("Verify entity is no longer available", async () =>
@@ -252,7 +256,7 @@ test(
   async ({ request, authToken, debugApiCall }) => {
     const payload = createMythologyPayload();
 
-    const id = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
+    const id = randomInt(100000, 999999);
 
     const getResponse =
       await test.step("Verify entity is no longer available", async () =>
@@ -281,7 +285,7 @@ test(
   async ({ request, authToken, debugApiCall }) => {
     const payload = createMythologyPayload();
 
-    const id = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
+    const id = randomInt(100000, 999999);
 
     const getResponse =
       await test.step("Verify entity is no longer available", async () =>
@@ -308,7 +312,7 @@ test(
   "DELETE /mythology/{id} returns the expected status for a non-existent entity",
   { tag: ["@crud", "@debug"] },
   async ({ request, authToken, debugApiCall }) => {
-    const id = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
+    const id = randomInt(100000, 999999);
 
     const getResponse =
       await test.step("Verify entity is no longer available", async () =>
