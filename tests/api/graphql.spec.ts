@@ -429,7 +429,6 @@ test(
 
 test(
   "GraphQL createSoul without sending the JWT token",
-  // "GraphQL createSoul, patchSoulDeeds, and banishSoul handle an authenticated soul lifecycle",
   { tag: ["@graphql", "@debug"] },
   async ({ request, debugApiCall }) => {
     const session =
@@ -476,6 +475,7 @@ test(
 
       const createSoulData = await createSoulResponse.json();
 
+      expect(createSoulData.createSoul).toBeUndefined();
       expect(createSoulData.errors).toBeDefined();
       expect(createSoulData.errors[0].message).toBe(
         "Только авторизованные жрецы могут призывать души!",
