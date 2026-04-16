@@ -126,7 +126,7 @@ for (const testCase of unauthorizedMutationCases) {
 for (const testCase of invalidCreateMythologyCases) {
   test(
     `POST /mythology returns 400 for ${testCase.name}`,
-    { tag: "@negative" },
+    { tag: ["@negative", "@debug"] },
     async ({ request, authToken, debugApiCall }) => {
       const response =
         await test.step(`Submit invalid create payload: ${testCase.name}`, async () =>
@@ -147,6 +147,8 @@ for (const testCase of invalidCreateMythologyCases) {
 
       expect(response.status()).toBe(400);
       expectJsonContentType(response);
+      const data = await response.json();
+      expect(data.error).toBe("Поля name и category обязательны.");
 
       const body =
         await test.step(`Read invalid create response: ${testCase.name}`, async () =>
