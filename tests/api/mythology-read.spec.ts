@@ -15,6 +15,8 @@ import {
   expectMythologyEntityListContract,
 } from "../support/contract-assertions";
 
+const not_found = "Персонаж не найден";
+
 test(
   "GET /mythology returns successful JSON response",
   { tag: ["@read", "@smoke"] },
@@ -41,6 +43,93 @@ test(
     expect(body.length).toBeGreaterThan(0);
   },
 );
+
+for (const category of mythologyCategories) {
+  test(
+    `GET /mythology?category=${category} returns only ${category} in correct order`,
+    { tag: ["@read", "@debug"] },
+    async ({ request, debugApiCall }) => {
+      const ascResponse =
+        await test.step(`Fetch mythology list filtered by ${category}`, async () =>
+          debugApiCall(
+            {
+              label: `Fetch mythology list filtered by ${category}`,
+              request: {
+                method: "GET",
+                url: `mythology?category=${category}&sort=asc`,
+              },
+            },
+            () =>
+              getMythologyList(request, { category: category, sort: "asc" }),
+          ));
+
+      const descResponse =
+        await test.step(`Fetch mythology list filtered by ${category}`, async () =>
+          debugApiCall(
+            {
+              label: `Fetch mythology list filtered by ${category}`,
+              request: {
+                method: "GET",
+                url: `mythology?category=${category}&sort=desc`,
+              },
+            },
+            () =>
+              getMythologyList(request, { category: category, sort: "desc" }),
+          ));
+
+      await expect(ascResponse).toBeOK();
+      expectJsonContentType(ascResponse);
+
+      const ascBody =
+        await test.step("Read filtered mythology list response", async () =>
+          (await ascResponse.json()) as MythologyEntity[]);
+
+      expectMythologyEntityListContract(ascBody);
+
+      for (const entity of ascBody) {
+        expect(entity.category).toBe(category);
+      }
+
+      await expect(descResponse).toBeOK();
+      expectJsonContentType(descResponse);
+
+      const descBody =
+        await test.step("Read filtered mythology list response", async () =>
+          (await descResponse.json()) as MythologyEntity[]);
+
+      expectMythologyEntityListContract(descBody);
+
+      for (const entity of descBody) {
+        expect(entity.category).toBe(category);
+      }
+
+      const ascEntities =
+        await test.step("Read ascending mythology list response", async () =>
+          (await ascResponse.json()) as MythologyEntity[]);
+      const descEntities =
+        await test.step("Read descending mythology list response", async () =>
+          (await descResponse.json()) as MythologyEntity[]);
+
+      expectMythologyEntityListContract(ascEntities);
+      expectMythologyEntityListContract(descEntities);
+
+      const descIds = new Set(descEntities.map((entity) => entity.id));
+      const ascIds = new Set(ascEntities.map((entity) => entity.id));
+
+      const commonAscIds = ascEntities
+        .filter((entity) => descIds.has(entity.id))
+        .map((entity) => entity.id);
+      const commonDescIds = descEntities
+        .filter((entity) => ascIds.has(entity.id))
+        .map((entity) => entity.id);
+
+      expect(commonAscIds.length).toBeGreaterThan(10);
+      expect(commonDescIds.length).toBe(commonAscIds.length);
+      expect(commonAscIds).not.toEqual(commonDescIds);
+      expect(commonAscIds.slice(0, 10)).not.toEqual(commonDescIds.slice(0, 10));
+    },
+  );
+}
 
 for (const category of mythologyCategories) {
   test(
@@ -190,7 +279,7 @@ test(
 
 test(
   "GET /mythology/{id} returns 404 for a non-existent entity",
-  { tag: "@read" },
+  { tag: ["@read", "@debug"] },
   async ({ request, debugApiCall }) => {
     const response =
       await test.step("Fetch a non-existent mythology entity by id", async () =>
@@ -207,6 +296,8 @@ test(
 
     expect(response.status()).toBe(404);
     expectJsonContentType(response);
+    const data = await response.json();
+    expect(data.error).toBe(not_found);
 
     const body =
       await test.step("Read non-existent mythology entity response", async () =>

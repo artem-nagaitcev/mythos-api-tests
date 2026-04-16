@@ -4,6 +4,7 @@ import {
   getMythologyById,
   patchMythologyEntity,
   replaceMythologyEntity,
+  createMythologyEntityById,
   type MythologyEntity,
 } from "../../src/api/mythology";
 import { expect, test } from "../fixtures/api-test";
@@ -18,6 +19,8 @@ import {
 } from "../support/contract-assertions";
 
 test.describe.configure({ mode: "serial" });
+
+const not_found = "Персонаж не найден";
 
 test(
   "POST /mythology creates a new entity",
@@ -211,5 +214,119 @@ test(
         ));
 
     expect(getResponse.status()).toBe(404);
+    const data = await getResponse.json();
+    expect(data.error).toBe(not_found);
+  },
+);
+
+test(
+  "POST /mythology/{id} returns 405 Method Not Allowed",
+  { tag: ["@crud", "@debug"] },
+  async ({ request, authToken, debugApiCall }) => {
+    const payload = createMythologyPayload();
+
+    const id = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
+
+    const getResponse =
+      await test.step("Verify entity is no longer available", async () =>
+        debugApiCall(
+          {
+            label: `Send POST request entity ${id}`,
+            request: {
+              method: "POST",
+              url: `mythology/${id}`,
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+              },
+            },
+          },
+          () => createMythologyEntityById(request, authToken, payload, id),
+        ));
+    expect(getResponse.status()).toBe(405);
+  },
+);
+
+test(
+  "PUT /mythology/{id} returns the expected status for a non-existent entity",
+  { tag: ["@crud", "@debug"] },
+  async ({ request, authToken, debugApiCall }) => {
+    const payload = createMythologyPayload();
+
+    const id = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
+
+    const getResponse =
+      await test.step("Verify entity is no longer available", async () =>
+        debugApiCall(
+          {
+            label: `Send PUT request entity ${id}`,
+            request: {
+              method: "PUT",
+              url: `mythology/${id}`,
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+              },
+            },
+          },
+          () => replaceMythologyEntity(request, authToken, id, payload),
+        ));
+    expect(getResponse.status()).toBe(404);
+    const data = await getResponse.json();
+    expect(data.error).toBe(not_found);
+  },
+);
+
+test(
+  "PATCH /mythology/{id} returns the expected status for a non-existent entity",
+  { tag: ["@crud", "@debug"] },
+  async ({ request, authToken, debugApiCall }) => {
+    const payload = createMythologyPayload();
+
+    const id = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
+
+    const getResponse =
+      await test.step("Verify entity is no longer available", async () =>
+        debugApiCall(
+          {
+            label: `Send PATCH request entity ${id}`,
+            request: {
+              method: "PATCH",
+              url: `mythology/${id}`,
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+              },
+            },
+          },
+          () => patchMythologyEntity(request, authToken, id, payload),
+        ));
+    expect(getResponse.status()).toBe(404);
+    const data = await getResponse.json();
+    expect(data.error).toBe(not_found);
+  },
+);
+
+test(
+  "DELETE /mythology/{id} returns the expected status for a non-existent entity",
+  { tag: ["@crud", "@debug"] },
+  async ({ request, authToken, debugApiCall }) => {
+    const id = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
+
+    const getResponse =
+      await test.step("Verify entity is no longer available", async () =>
+        debugApiCall(
+          {
+            label: `Send DELETE request entity ${id}`,
+            request: {
+              method: "DELETE",
+              url: `mythology/${id}`,
+              headers: {
+                Authorization: `Bearer ${authToken}`,
+              },
+            },
+          },
+          () => deleteMythologyEntity(request, authToken, id),
+        ));
+    expect(getResponse.status()).toBe(404);
+    const data = await getResponse.json();
+    expect(data.error).toBe(not_found);
   },
 );
