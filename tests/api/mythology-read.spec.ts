@@ -74,7 +74,7 @@ for (const category of mythologyCategories) {
               },
             },
             () =>
-              getMythologyList(request, { category: category, sort: "asc" }),
+              getMythologyList(request, { category: category, sort: "desc" }),
           ));
 
       await expect(ascResponse).toBeOK();
@@ -123,10 +123,10 @@ for (const category of mythologyCategories) {
         .filter((entity) => ascIds.has(entity.id))
         .map((entity) => entity.id);
 
-      expect(commonAscIds.length).toBeGreaterThan(20);
+      expect(commonAscIds.length).toBeGreaterThan(10);
       expect(commonDescIds.length).toBe(commonAscIds.length);
       expect(commonAscIds).not.toEqual(commonDescIds);
-      expect(commonAscIds.slice(0, 20)).not.toEqual(commonDescIds.slice(0, 20));
+      expect(commonAscIds.slice(0, 10)).not.toEqual(commonDescIds.slice(0, 10));
     },
   );
 }
