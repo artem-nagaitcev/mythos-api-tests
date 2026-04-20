@@ -2,6 +2,8 @@ import * as allure from "allure-js-commons";
 import type { StepContext } from "allure-js-commons";
 import { expect, test } from "../fixtures/api-test";
 
+const id = Math.floor(Math.random() * 899) + 100;
+
 type MockExchange = {
   label: string;
   request: {
@@ -34,6 +36,35 @@ const resolveApiUrls = (): {
 const stringifyAttachment = (value: unknown): string =>
   JSON.stringify(value, null, 2);
 
+const mockedResponse = {
+  id: expect.any(Number),
+  name: expect.any(String),
+  category: expect.any(String),
+  desc: expect.any(String),
+};
+
+const redactHeaders = (
+  headers: Record<string, string>,
+): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(headers).map(([key, value]) => [
+      key,
+      key.toLowerCase().includes("authorization") ? "***" : value,
+    ]),
+  );
+
+const readRequestBody = (rawBody: string | null): unknown => {
+  if (!rawBody) {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(rawBody) as unknown;
+  } catch {
+    return rawBody;
+  }
+};
+
 test(
   "Patch GET /mythology with a Mocked Hero",
   { tag: ["@mock", "@debug"] },
@@ -44,14 +75,35 @@ test(
     await page.route("**/api/mythology", async (route) => {
       const response = await route.fetch();
       const json = await response.json();
+      const request = route.request();
 
       const mockedHero = {
-        id: Math.floor(Math.random() * 899) + 100,
-        name: "Mocked Hero",
+        id: id,
+        name: `Mocked Hero ${id}`,
         category: "heroes",
+        desc: `Mocked Hero ${id}`,
       };
 
       json.push(mockedHero);
+
+      exchanges.push({
+        label:
+          "Mock GET /mythology to return a patched list with a synthetic hero",
+        request: {
+          body: readRequestBody(request.postData()),
+          headers: redactHeaders(request.headers()),
+          method: request.method(),
+          url: request.url(),
+        },
+        response: {
+          body: mockedResponse,
+          headers: {
+            "access-control-allow-origin": "*",
+            "content-type": "application/json",
+          },
+          status: 200,
+        },
+      });
 
       await route.fulfill({
         response,
@@ -81,7 +133,7 @@ test(
     const jsonArray = result as any[];
     const heroNames = jsonArray.map((hero: any) => hero.name);
 
-    expect(heroNames).toContain("Mocked Hero");
+    expect(heroNames).toContain(`Mocked Hero ${id}`);
 
     for (const exchange of exchanges) {
       await allure.step(
