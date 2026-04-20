@@ -431,21 +431,14 @@ test(
   "GraphQL createSoul without sending the JWT token",
   { tag: ["@graphql", "@debug"] },
   async ({ request, debugApiCall }) => {
-    const session =
-      await test.step("Register and authenticate a GraphQL scribe", async () =>
-        createScribeSession({ request, debugApiCall }));
-
     const soulName = `Playwright Soul ${Date.now()}`;
-    const deed = `Documented in Playwright ${Date.now()}`;
-    let soulId: string | undefined;
 
-    try {
-      const createSoulResponse =
-        await test.step("Create a new soul through GraphQL", async () =>
-          debugApiCall(
-            createGraphqlMetadata("Create a GraphQL soul", {
-              operationName: "CreateSoul",
-              query: `
+    const createSoulResponse =
+      await test.step("Create a new soul through GraphQL", async () =>
+        debugApiCall(
+          createGraphqlMetadata("Create a GraphQL soul", {
+            operationName: "CreateSoul",
+            query: `
               mutation CreateSoul($input: SoulInput!) {
                 createSoul(input: $input) {
                   id
@@ -456,55 +449,29 @@ test(
                 }
               }
             `,
-              variables: {
-                input: {
-                  name: soulName,
-                  weight: 25,
-                },
-              },
-            }),
-            () =>
-              createSoulWithoutToken(request, {
+            variables: {
+              input: {
                 name: soulName,
                 weight: 25,
-              }),
-          ));
-
-      await expect(createSoulResponse).toBeOK();
-      expectJsonContentType(createSoulResponse);
-
-      const createSoulData = await createSoulResponse.json();
-
-      expect(createSoulData.createSoul).toBeUndefined();
-      expect(createSoulData.errors).toBeDefined();
-      expect(createSoulData.errors[0].message).toBe(
-        "Только авторизованные жрецы могут призывать души!",
-      );
-    } finally {
-      if (soulId) {
-        const cleanupSoulId = soulId;
-
-        try {
-          await debugApiCall(
-            createGraphqlMetadata(
-              "Best-effort cleanup for the created GraphQL soul",
-              {
-                operationName: "BanishSoul",
-                query: `
-                mutation BanishSoul($id: ID!) {
-                  banishSoul(id: $id)
-                }
-              `,
-                variables: { id: cleanupSoulId },
               },
-              session.token,
-            ),
-            () => banishSoul(request, session.token, cleanupSoulId),
-          );
-        } catch {
-          // Cleanup is best-effort here so the original failure stays primary.
-        }
-      }
-    }
+            },
+          }),
+          () =>
+            createSoulWithoutToken(request, {
+              name: soulName,
+              weight: 25,
+            }),
+        ));
+
+    await expect(createSoulResponse).toBeOK();
+    expectJsonContentType(createSoulResponse);
+
+    const createSoulData = await createSoulResponse.json();
+
+    expect(createSoulData.createSoul).toBeUndefined();
+    expect(createSoulData.errors).toBeDefined();
+    expect(createSoulData.errors[0].message).toBe(
+      "Только авторизованные жрецы могут призывать души!",
+    );
   },
 );
