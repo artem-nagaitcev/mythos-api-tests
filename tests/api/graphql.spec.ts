@@ -3,6 +3,7 @@ import type { APIRequestContext, APIResponse } from "@playwright/test";
 import {
   banishSoul,
   createSoul,
+  createSoulWithoutToken,
   createUniqueScribeCredentials,
   getAllSouls,
   getCurrentScribe,
@@ -423,5 +424,54 @@ test(
         }
       }
     }
+  },
+);
+
+test(
+  "GraphQL createSoul without sending the JWT token",
+  { tag: ["@graphql", "@debug"] },
+  async ({ request, debugApiCall }) => {
+    const soulName = `Playwright Soul ${Date.now()}`;
+
+    const createSoulResponse =
+      await test.step("Create a new soul through GraphQL", async () =>
+        debugApiCall(
+          createGraphqlMetadata("Create a GraphQL soul", {
+            operationName: "CreateSoul",
+            query: `
+              mutation CreateSoul($input: SoulInput!) {
+                createSoul(input: $input) {
+                  id
+                  name
+                  deeds
+                  status
+                  weight
+                }
+              }
+            `,
+            variables: {
+              input: {
+                name: soulName,
+                weight: 25,
+              },
+            },
+          }),
+          () =>
+            createSoulWithoutToken(request, {
+              name: soulName,
+              weight: 25,
+            }),
+        ));
+
+    await expect(createSoulResponse).toBeOK();
+    expectJsonContentType(createSoulResponse);
+
+    const createSoulData = await createSoulResponse.json();
+
+    expect(createSoulData.createSoul).toBeUndefined();
+    expect(createSoulData.errors).toBeDefined();
+    expect(createSoulData.errors[0].message).toBe(
+      "Только авторизованные жрецы могут призывать души!",
+    );
   },
 );

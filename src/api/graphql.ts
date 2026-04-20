@@ -213,6 +213,29 @@ export const createSoul = (
     },
   );
 
+export const createSoulWithoutToken = (
+  request: APIRequestContext,
+  input: SoulInput,
+): Promise<APIResponse> =>
+  postGraphql<{ createSoul: SoulMutationPayload }, { input: SoulInput }>(
+    request,
+    {
+      operationName: "CreateSoul",
+      query: `
+      mutation CreateSoul($input: SoulInput!) {
+        createSoul(input: $input) {
+          id
+          name
+          deeds
+          status
+          weight
+        }
+      }
+    `,
+      variables: { input },
+    },
+  );
+
 export const patchSoulDeeds = (
   request: APIRequestContext,
   token: string,
